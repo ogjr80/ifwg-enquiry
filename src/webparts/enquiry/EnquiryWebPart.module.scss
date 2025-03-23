@@ -91,6 +91,19 @@
     &.active {
       opacity: 1;
     }
+    
+    &.current {
+      .stepNumber {
+        transform: scale(1.2);
+        box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.2);
+        font-weight: bold;
+      }
+      
+      .stepLabel {
+        font-weight: 600;
+        color: #0078d4;
+      }
+    }
 
     &::before {
       content: '';
@@ -125,10 +138,14 @@
     margin-bottom: 5px;
     position: relative;
     z-index: 1;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
 
     .active & {
       background-color: $ms-color-themePrimary;
+    }
+    
+    .current & {
+      background-color: $ms-color-themeDarker;
     }
   }
 

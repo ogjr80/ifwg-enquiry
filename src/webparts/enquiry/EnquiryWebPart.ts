@@ -181,18 +181,18 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
             </div>
             <div class="${ styles.progressContainer }">
               <div class="${ styles.progressBar }">
-                <div class="${ styles.progress }" style="width: ${(this.currentStep - 1) * 50}%"></div>
+                <div class="${ styles.progress }" style="width: ${(this.currentStep - 1) * 33.33}%"></div>
               </div>
               <div class="${ styles.steps }">
-                <div class="${ styles.step } ${this.currentStep >= 1 ? styles.active : ''}">
+                <div class="${ styles.step } ${this.currentStep >= 1 ? styles.active : ''} ${this.currentStep === 1 ? styles.current : ''}">
                   <div class="${ styles.stepNumber }">1</div>
                   <div class="${ styles.stepLabel }">Basic Information</div>
                 </div>
-                <div class="${ styles.step } ${this.currentStep >= 2 ? styles.active : ''}">
+                <div class="${ styles.step } ${this.currentStep >= 2 ? styles.active : ''} ${this.currentStep === 2 ? styles.current : ''}">
                   <div class="${ styles.stepNumber }">2</div>
                   <div class="${ styles.stepLabel }">Industry Information</div>
                 </div>
-                <div class="${ styles.step } ${this.currentStep >= 3 ? styles.active : ''}">
+                <div class="${ styles.step } ${this.currentStep >= 3 ? styles.active : ''} ${this.currentStep === 3 ? styles.current : ''}">
                   <div class="${ styles.stepNumber }">3</div>
                   <div class="${ styles.stepLabel }">Your Enquiry</div>
                 </div>
@@ -614,8 +614,15 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
     
     const backToStep2Button = this.domElement.querySelector('#backToStep2');
     if (backToStep2Button) {
-      backToStep2Button.addEventListener('click', () => {
+      backToStep2Button.addEventListener('click', (e) => {
+        // Prevent default behavior
+        e.preventDefault();
+        
         console.log('Back to Step 2 clicked');
+        
+        // Save current step data before moving back
+        this.saveCurrentInquiryData();
+        
         this.currentStep = 2;
         this.validateAttempted = false;
         this.render();
@@ -624,10 +631,17 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
     
     const submitButton = this.domElement.querySelector('#submitBtn');
     if (submitButton) {
-      submitButton.addEventListener('click', () => {
+      submitButton.addEventListener('click', (e) => {
+        // Prevent default behavior
+        e.preventDefault();
+        
         console.log('Submit button clicked');
+        
+        // Make sure to save current data before validation
+        this.saveCurrentInquiryData();
+        
         if (this.validateStep3()) {
-          this.saveStep3Data();
+          // Data is already saved by saveCurrentInquiryData() above
           this.submitForm();
         }
       });
@@ -695,6 +709,32 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
         });
       }
       
+      // Handle operational status change
+      const operationalStatusYes = this.domElement.querySelector('#operationalStatusYes') as HTMLInputElement;
+      const operationalStatusNo = this.domElement.querySelector('#operationalStatusNo') as HTMLInputElement;
+      
+      if (operationalStatusYes) {
+        operationalStatusYes.addEventListener('change', () => {
+          console.log('Operational status changed to Yes');
+          if (operationalStatusYes.checked) {
+            // Save current form data
+            this.saveCurrentIndustryData();
+            this.formData.operationalStatus = true;
+          }
+        });
+      }
+      
+      if (operationalStatusNo) {
+        operationalStatusNo.addEventListener('change', () => {
+          console.log('Operational status changed to No');
+          if (operationalStatusNo.checked) {
+            // Save current form data
+            this.saveCurrentIndustryData();
+            this.formData.operationalStatus = false;
+          }
+        });
+      }
+      
       // Handle regulatory status change
       const regulatoryStatusYes = this.domElement.querySelector('#regulatoryStatusYes') as HTMLInputElement;
       const regulatoryStatusNo = this.domElement.querySelector('#regulatoryStatusNo') as HTMLInputElement;
@@ -703,10 +743,14 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
         regulatoryStatusYes.addEventListener('change', () => {
           console.log('Regulatory status changed to Yes');
           if (regulatoryStatusYes.checked) {
+            // Save current form data before changing regulatory status
+            this.saveCurrentIndustryData();
+            
             this.formData.regulatoryStatus = true;
             this.render();
-            // Re-setup regulator selector after render
+            // Re-setup handlers after render
             this.setupRegulatorSelector();
+            this.setButtonHandlers();
           }
         });
       }
@@ -715,8 +759,14 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
         regulatoryStatusNo.addEventListener('change', () => {
           console.log('Regulatory status changed to No');
           if (regulatoryStatusNo.checked) {
+            // Save current form data before changing regulatory status
+            this.saveCurrentIndustryData();
+            
             this.formData.regulatoryStatus = false;
+            // Clear regulator selection when No is selected
+            this.formData.regulators = [];
             this.render();
+            this.setButtonHandlers();
           }
         });
       }
@@ -748,8 +798,15 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
       const fileInput = this.domElement.querySelector('#fileUpload') as HTMLInputElement;
       
       if (uploadBtn && fileInput) {
-        uploadBtn.addEventListener('click', () => {
+        uploadBtn.addEventListener('click', (e) => {
+          // Prevent default behavior
+          e.preventDefault();
+          
           console.log('Upload button clicked');
+          
+          // Save current form data before handling files
+          this.saveCurrentInquiryData();
+          
           if (fileInput.files && fileInput.files.length > 0) {
             const maxFiles = 5;
             const maxFileSize = 10 * 1024 * 1024; // 10MB
@@ -787,8 +844,8 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
             }
             
             if (!invalidFiles) {
-              // Clear the file input
-              fileInput.value = '';
+              // Clear the file input properly (cross-browser solution)
+              this.resetFileInput(fileInput);
             }
             
             // Re-render the file list
@@ -819,9 +876,10 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
         
         for (let i = 0; i < countryItems.length; i++) {
           const item = countryItems[i] as HTMLElement;
-          const countryName = item.textContent ? item.textContent.toLowerCase() : '';
+          const label = item.querySelector('label');
+          const countryName = label ? label.textContent.toLowerCase() : '';
           
-          if (countryName.includes(searchValue)) {
+          if (countryName.indexOf(searchValue) !== -1) {
             item.style.display = '';
           } else {
             item.style.display = 'none';
@@ -1101,10 +1159,7 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
     if (this.formData.regulators.indexOf('Other') !== -1) {
       const otherRegulatorInput = this.domElement.querySelector('#otherRegulator') as HTMLInputElement;
       console.log('Other regulator:', otherRegulatorInput ? otherRegulatorInput.value : undefined);
-      if (!otherRegulatorInput || !otherRegulatorInput.value.trim()) {
-        console.log('Other regulator is invalid');
-        isValid = false;
-      } else {
+      if (otherRegulatorInput && otherRegulatorInput.value.trim()) {
         this.formData.otherRegulator = otherRegulatorInput.value.trim();
       }
     }
@@ -1120,34 +1175,62 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
   }
 
   private validateStep3(): boolean {
+    console.log('Validating Step 3');
+    this.validateAttempted = true;
     let isValid = true;
     
     // Product/service description validation
-    if (!this.formData.productServiceDescription) {
+    const descriptionTextarea = this.domElement.querySelector('#productServiceDescription') as HTMLTextAreaElement;
+    if (!descriptionTextarea || !descriptionTextarea.value.trim()) {
+      console.log('Product/service description is invalid');
       isValid = false;
+    } else {
+      this.formData.productServiceDescription = descriptionTextarea.value.trim();
     }
     
     // Questions validation (at least one question required)
-    if (this.formData.questions.length === 0 || !this.formData.questions[0]) {
+    const questionInputs = this.domElement.querySelectorAll('.question-input') as NodeListOf<HTMLTextAreaElement>;
+    let hasValidQuestion = false;
+    
+    // Check if at least one question is filled
+    for (let i = 0; i < questionInputs.length; i++) {
+      if (questionInputs[i].value.trim()) {
+        hasValidQuestion = true;
+        break;
+      }
+    }
+    
+    if (!hasValidQuestion) {
+      console.log('No valid questions found');
       isValid = false;
     }
     
     // FAQ confirmation validation
-    if (this.formData.faqConfirmation === null) {
+    const faqYes = this.domElement.querySelector('#faqConfirmationYes') as HTMLInputElement;
+    const faqNo = this.domElement.querySelector('#faqConfirmationNo') as HTMLInputElement;
+    if ((!faqYes || !faqYes.checked) && (!faqNo || !faqNo.checked)) {
+      console.log('FAQ confirmation is invalid');
       isValid = false;
     }
     
     // Consent validation
-    if (!this.formData.consentConfirmation) {
+    const consentCheckbox = this.domElement.querySelector('#consentCheckbox') as HTMLInputElement;
+    if (!consentCheckbox || !consentCheckbox.checked) {
+      console.log('Consent is not checked');
       isValid = false;
     }
     
-    // Set validation attempted flag and re-render if not valid
+    // Re-render to show validation messages if invalid
     if (!isValid) {
-      this.validateAttempted = true;
+      console.log('Step 3 validation failed');
       this.render();
+      
+      // Re-setup event handlers after render
+      this.setupRemoveQuestionButtons();
+      this.setupRemoveFileButtons();
     }
     
+    console.log('Step 3 validation result:', isValid);
     return isValid;
   }
 
@@ -1244,9 +1327,9 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
     // Get other regulator if applicable
     if (this.formData.regulators.indexOf('Other') !== -1) {
       const otherRegulatorInput = this.domElement.querySelector('#otherRegulator') as HTMLInputElement;
-      if (otherRegulatorInput) {
-        console.log('Saving other regulator:', otherRegulatorInput.value);
-        this.formData.otherRegulator = otherRegulatorInput.value;
+      console.log('Saving other regulator:', otherRegulatorInput ? otherRegulatorInput.value : undefined);
+      if (otherRegulatorInput && otherRegulatorInput.value.trim()) {
+        this.formData.otherRegulator = otherRegulatorInput.value.trim();
       }
     }
     
@@ -1398,7 +1481,13 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
     for (let i = 0; i < removeButtons.length; i++) {
       const button = removeButtons[i] as HTMLButtonElement;
       
-      button.addEventListener('click', () => {
+      button.addEventListener('click', (e) => {
+        // Prevent default behavior
+        e.preventDefault();
+        
+        // Save current form data
+        this.saveCurrentInquiryData();
+        
         const index = parseInt(button.getAttribute('data-index'), 10);
         if (!isNaN(index) && index >= 0 && index < this.formData.files.length) {
           this.formData.files.splice(index, 1);
@@ -1452,6 +1541,92 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
     }
     
     console.log('Current inquiry data saved:', this.formData);
+  }
+
+  /**
+   * Safely resets a file input element across different browsers
+   */
+  private resetFileInput(fileInput: HTMLInputElement): void {
+    try {
+      // Clear the value (works in most browsers)
+      fileInput.value = '';
+      
+      // For IE/Edge, try creating a new form and reset
+      if (!fileInput.value) {
+        return; // If successful, we're done
+      }
+      
+      // If the above method failed, try cloning and replacing
+      const parentNode = fileInput.parentNode;
+      if (parentNode) {
+        const newInput = fileInput.cloneNode(true) as HTMLInputElement;
+        newInput.value = '';
+        parentNode.replaceChild(newInput, fileInput);
+        
+        // Reattach event listeners if needed
+        this.setButtonHandlers();
+      }
+    } catch (error) {
+      console.error('Error resetting file input:', error);
+    }
+  }
+
+  /**
+   * Saves the current industry form data without moving to another step
+   */
+  private saveCurrentIndustryData(): void {
+    console.log('Saving current industry step data without changing steps');
+    
+    // Get primary business area
+    const primaryBusinessArea = this.domElement.querySelector('#primaryBusinessAreas') as HTMLSelectElement;
+    if (primaryBusinessArea) {
+      this.formData.primaryBusinessAreas = primaryBusinessArea.value;
+    }
+    
+    // Get product/service category
+    const productServiceCategory = this.domElement.querySelector('#productServiceCategory') as HTMLSelectElement;
+    if (productServiceCategory) {
+      this.formData.productServiceCategory = productServiceCategory.value;
+    }
+    
+    // Get other product/service category if applicable
+    if (this.formData.productServiceCategory === 'Other') {
+      const otherProductServiceCategory = this.domElement.querySelector('#otherProductServiceCategory') as HTMLInputElement;
+      if (otherProductServiceCategory) {
+        this.formData.otherProductServiceCategory = otherProductServiceCategory.value;
+      }
+    }
+    
+    // Get operational status - IMPORTANT: Preserve this across re-renders
+    const operationalStatusYes = this.domElement.querySelector('#operationalStatusYes') as HTMLInputElement;
+    const operationalStatusNo = this.domElement.querySelector('#operationalStatusNo') as HTMLInputElement;
+    if (operationalStatusYes && operationalStatusNo) {
+      if (operationalStatusYes.checked) {
+        this.formData.operationalStatus = true;
+      } else if (operationalStatusNo.checked) {
+        this.formData.operationalStatus = false;
+      }
+    }
+    
+    // Regulatory status is handled by the callers
+    
+    // Get regulators if applicable
+    if (this.formData.regulatoryStatus === true) {
+      const regulatorCheckboxes = this.domElement.querySelectorAll('.regulator-checkbox:checked') as NodeListOf<HTMLInputElement>;
+      if (regulatorCheckboxes && regulatorCheckboxes.length > 0) {
+        this.formData.regulators = Array.from(regulatorCheckboxes).map(checkbox => checkbox.value);
+      }
+    }
+    
+    // Get other regulator if applicable
+    if (this.formData.regulators.indexOf('Other') !== -1) {
+      const otherRegulator = this.domElement.querySelector('#otherRegulator') as HTMLInputElement;
+      if (otherRegulator) {
+        this.formData.otherRegulator = otherRegulator.value;
+      }
+    }
+    
+    console.log('Current industry data saved:', this.formData);
   }
 
   protected getDataVersion(): Version {
