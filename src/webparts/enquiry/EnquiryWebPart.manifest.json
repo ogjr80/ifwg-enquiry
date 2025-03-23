@@ -1,0 +1,21 @@
+{
+  "$schema": "https://dev.office.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "2fd30677-b081-4449-b0cf-528f8a37b19a",
+  "alias": "EnquiryWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "preconfiguredEntries": [{
+    "groupId": "5c03119e-3074-46fd-976b-c60198311f70",
+    "group": { "default": "Forms" },
+    "title": { "default": "Multi-Step Inquiry Form" },
+    "description": { "default": "A professional multi-step inquiry form with animations for collecting user information, industry details, and specific inquiry details." },
+    "officeFabricIconFontName": "FormLibrary",
+    "properties": {
+      "formTitle": "Inquiry Form",
+      "submitButtonText": "Submit",
+      "thankYouMessage": "Your inquiry has been submitted successfully. We will contact you soon."
+    }
+  }]
+}

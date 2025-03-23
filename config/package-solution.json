@@ -1,0 +1,13 @@
+{
+  "$schema": "https://dev.office.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "enquiry-client-side-solution",
+    "id": "b30ab0ea-98ea-47aa-89eb-4da81b115e27",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true
+  },
+  "paths": {
+    "zippedPackage": "solution/enquiry.sppkg"
+  }
+}
