@@ -334,7 +334,7 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
         
         <div class="${ styles.formField }">
           <label for="primaryBusinessAreas">What is the primary area of business in which you currently operate? <span class="${ styles.required }">*</span></label>
-          <select id="primaryBusinessAreas" class="${ styles.selectField }${this.formData.primaryBusinessAreas === '' && this.validateAttempted ? ' ' + styles.error : ''}" onchange="document.dispatchEvent(new CustomEvent('primaryBusinessChanged'))">
+          <select id="primaryBusinessAreas" class="${ styles.selectField }${this.formData.primaryBusinessAreas === '' && this.validateAttempted ? ' ' + styles.error : ''}">
             <option value="" ${!this.formData.primaryBusinessAreas ? 'selected' : ''}>Please select</option>
             <option value="banking" ${this.formData.primaryBusinessAreas === 'banking' ? 'selected' : ''}>Banking</option>
             <option value="payments" ${this.formData.primaryBusinessAreas === 'payments' ? 'selected' : ''}>Payments</option>
@@ -383,11 +383,11 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
           <label>Are you licensed/authorised/registered by regulatory authorities to undertake your primary business? <span class="${ styles.required }">*</span></label>
           <div class="${ styles.radioGroup }${this.formData.regulatoryStatus === null && this.validateAttempted ? ' ' + styles.error : ''}">
             <div class="${ styles.radioItem }">
-              <input type="radio" id="regulatoryStatusYes" name="regulatoryStatus" value="yes" ${this.formData.regulatoryStatus === true ? 'checked' : ''} onchange="document.dispatchEvent(new CustomEvent('regulatoryStatusChanged', {detail: {value: 'yes'}}))">
+              <input type="radio" id="regulatoryStatusYes" name="regulatoryStatus" value="yes" ${this.formData.regulatoryStatus === true ? 'checked' : ''}>
               <label for="regulatoryStatusYes">Yes</label>
             </div>
             <div class="${ styles.radioItem }">
-              <input type="radio" id="regulatoryStatusNo" name="regulatoryStatus" value="no" ${this.formData.regulatoryStatus === false ? 'checked' : ''} onchange="document.dispatchEvent(new CustomEvent('regulatoryStatusChanged', {detail: {value: 'no'}}))">
+              <input type="radio" id="regulatoryStatusNo" name="regulatoryStatus" value="no" ${this.formData.regulatoryStatus === false ? 'checked' : ''}>
               <label for="regulatoryStatusNo">No</label>
             </div>
           </div>
@@ -570,10 +570,14 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
   }
 
   private setButtonHandlers(): void {
+    console.log('Setting up button handlers for step:', this.currentStep);
+    
     // Navigation buttons
-    const nextToStep2Button = document.getElementById('nextToStep2');
+    const nextToStep2Button = this.domElement.querySelector('#nextToStep2');
     if (nextToStep2Button) {
+      console.log('Found Next to Step 2 button');
       nextToStep2Button.addEventListener('click', () => {
+        console.log('Next to Step 2 clicked');
         if (this.validateStep1()) {
           this.saveStep1Data();
           this.currentStep = 2;
@@ -581,20 +585,24 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
           this.render();
         }
       });
+    } else {
+      console.log('Next to Step 2 button not found');
     }
     
-    const backToStep1Button = document.getElementById('backToStep1');
+    const backToStep1Button = this.domElement.querySelector('#backToStep1');
     if (backToStep1Button) {
       backToStep1Button.addEventListener('click', () => {
+        console.log('Back to Step 1 clicked');
         this.currentStep = 1;
         this.validateAttempted = false;
         this.render();
       });
     }
     
-    const nextToStep3Button = document.getElementById('nextToStep3');
+    const nextToStep3Button = this.domElement.querySelector('#nextToStep3');
     if (nextToStep3Button) {
       nextToStep3Button.addEventListener('click', () => {
+        console.log('Next to Step 3 clicked');
         if (this.validateStep2()) {
           this.saveStep2Data();
           this.currentStep = 3;
@@ -604,18 +612,20 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
       });
     }
     
-    const backToStep2Button = document.getElementById('backToStep2');
+    const backToStep2Button = this.domElement.querySelector('#backToStep2');
     if (backToStep2Button) {
       backToStep2Button.addEventListener('click', () => {
+        console.log('Back to Step 2 clicked');
         this.currentStep = 2;
         this.validateAttempted = false;
         this.render();
       });
     }
     
-    const submitButton = document.getElementById('submitBtn');
+    const submitButton = this.domElement.querySelector('#submitBtn');
     if (submitButton) {
       submitButton.addEventListener('click', () => {
+        console.log('Submit button clicked');
         if (this.validateStep3()) {
           this.saveStep3Data();
           this.submitForm();
@@ -623,9 +633,10 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
       });
     }
     
-    const newInquiryButton = document.getElementById('newInquiryBtn');
+    const newInquiryButton = this.domElement.querySelector('#newInquiryBtn');
     if (newInquiryButton) {
       newInquiryButton.addEventListener('click', () => {
+        console.log('New Inquiry button clicked');
         this.resetForm();
       });
     }
@@ -638,35 +649,86 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
       this.setupRegulatorSelector();
       
       // Handle primary business area change
-      document.addEventListener('primaryBusinessChanged', () => {
-        const primaryBusinessAreasSelect = document.getElementById('primaryBusinessAreas') as HTMLSelectElement;
-        if (primaryBusinessAreasSelect) {
+      const primaryBusinessAreasSelect = this.domElement.querySelector('#primaryBusinessAreas') as HTMLSelectElement;
+      if (primaryBusinessAreasSelect) {
+        primaryBusinessAreasSelect.addEventListener('change', () => {
+          console.log('Primary business area changed to:', primaryBusinessAreasSelect.value);
           this.formData.primaryBusinessAreas = primaryBusinessAreasSelect.value;
+          
+          // Clear the product/service category when business area changes
           this.formData.productServiceCategory = '';
-          this.render();
-        }
-      });
-      
-      // Handle regulatory status change
-      document.addEventListener('regulatoryStatusChanged', (e: any) => {
-        if (e.detail && e.detail.value) {
-          this.formData.regulatoryStatus = e.detail.value === 'yes';
+          
+          // Re-render to update the product service category dropdown
           this.render();
           
-          if (this.formData.regulatoryStatus === true) {
+          // Setup event listener for product service category after render
+          setTimeout(() => {
+            const productServiceCategorySelectAfterRender = this.domElement.querySelector('#productServiceCategory') as HTMLSelectElement;
+            if (productServiceCategorySelectAfterRender) {
+              console.log('Setting up product service category change listener');
+              productServiceCategorySelectAfterRender.addEventListener('change', () => {
+                console.log('Product service category changed to:', productServiceCategorySelectAfterRender.value);
+                this.formData.productServiceCategory = productServiceCategorySelectAfterRender.value;
+                
+                // Re-render if "Other" is selected to show the additional field
+                if (productServiceCategorySelectAfterRender.value === 'Other') {
+                  this.render();
+                }
+              });
+            }
+          }, 100);
+        });
+      }
+      
+      // Setup event listener for product service category
+      const productServiceCategorySelect = this.domElement.querySelector('#productServiceCategory') as HTMLSelectElement;
+      if (productServiceCategorySelect) {
+        console.log('Setting up product service category change listener');
+        productServiceCategorySelect.addEventListener('change', () => {
+          console.log('Product service category changed to:', productServiceCategorySelect.value);
+          this.formData.productServiceCategory = productServiceCategorySelect.value;
+          
+          // Re-render if "Other" is selected to show the additional field
+          if (productServiceCategorySelect.value === 'Other') {
+            this.render();
+          }
+        });
+      }
+      
+      // Handle regulatory status change
+      const regulatoryStatusYes = this.domElement.querySelector('#regulatoryStatusYes') as HTMLInputElement;
+      const regulatoryStatusNo = this.domElement.querySelector('#regulatoryStatusNo') as HTMLInputElement;
+      
+      if (regulatoryStatusYes) {
+        regulatoryStatusYes.addEventListener('change', () => {
+          console.log('Regulatory status changed to Yes');
+          if (regulatoryStatusYes.checked) {
+            this.formData.regulatoryStatus = true;
+            this.render();
             // Re-setup regulator selector after render
             this.setupRegulatorSelector();
           }
-        }
-      });
+        });
+      }
+      
+      if (regulatoryStatusNo) {
+        regulatoryStatusNo.addEventListener('change', () => {
+          console.log('Regulatory status changed to No');
+          if (regulatoryStatusNo.checked) {
+            this.formData.regulatoryStatus = false;
+            this.render();
+          }
+        });
+      }
     }
     
     // Setup question management and file upload if in step 3
     if (this.currentStep === 3) {
       // Add question button
-      const addQuestionBtn = document.getElementById('addQuestionBtn');
+      const addQuestionBtn = this.domElement.querySelector('#addQuestionBtn');
       if (addQuestionBtn) {
         addQuestionBtn.addEventListener('click', () => {
+          console.log('Add question button clicked');
           this.formData.questions.push('');
           this.render();
           this.setupRemoveQuestionButtons();
@@ -677,11 +739,12 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
       this.setupRemoveQuestionButtons();
       
       // File upload
-      const uploadBtn = document.getElementById('uploadBtn');
-      const fileInput = document.getElementById('fileUpload') as HTMLInputElement;
+      const uploadBtn = this.domElement.querySelector('#uploadBtn');
+      const fileInput = this.domElement.querySelector('#fileUpload') as HTMLInputElement;
       
       if (uploadBtn && fileInput) {
         uploadBtn.addEventListener('click', () => {
+          console.log('Upload button clicked');
           if (fileInput.files && fileInput.files.length > 0) {
             const maxFiles = 5;
             const maxFileSize = 10 * 1024 * 1024; // 10MB
@@ -736,199 +799,315 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
   }
   
   private setupCountrySelector(): void {
-    // Set up country search functionality
+    console.log('Setting up country selector - DEBUG');
+    console.log('Current countries of operation:', this.formData.countriesOfOperation);
+    
+    // Setup the country search
     const countrySearch = this.domElement.querySelector('#countrySearch') as HTMLInputElement;
+    const countryItems = this.domElement.querySelectorAll('.country-item');
+    
     if (countrySearch) {
-      countrySearch.addEventListener('input', (e) => {
-        const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
-        const countryItems = this.domElement.querySelectorAll(`.${styles.countryItem}`);
+      console.log('Found country search field');
+      countrySearch.addEventListener('input', () => {
+        const searchValue = countrySearch.value.toLowerCase();
+        console.log('Searching for country:', searchValue);
         
         for (let i = 0; i < countryItems.length; i++) {
           const item = countryItems[i] as HTMLElement;
-          const countryName = (item.querySelector('label') as HTMLElement).textContent.toLowerCase();
-          if (countryName.indexOf(searchTerm) !== -1) {
-            item.style.display = 'flex';
+          const countryName = item.textContent ? item.textContent.toLowerCase() : '';
+          
+          if (countryName.includes(searchValue)) {
+            item.style.display = '';
           } else {
             item.style.display = 'none';
           }
         }
       });
+    } else {
+      console.log('Country search field not found');
     }
-
-    // Set up country checkboxes
+    
+    // Setup checkbox for country selection
     const countryCheckboxes = this.domElement.querySelectorAll('.country-checkbox');
+    console.log('Found country checkboxes:', countryCheckboxes.length);
+    
     for (let i = 0; i < countryCheckboxes.length; i++) {
       const checkbox = countryCheckboxes[i] as HTMLInputElement;
-      checkbox.addEventListener('change', (e) => {
-        const country = (e.target as HTMLInputElement).value;
-        if ((e.target as HTMLInputElement).checked) {
-          // Add country if not already in array
-          if (this.formData.countriesOfOperation.indexOf(country) === -1) {
-            this.formData.countriesOfOperation.push(country);
+      const countryName = checkbox.value;
+      
+      if (this.formData.countriesOfOperation.includes(countryName)) {
+        checkbox.checked = true;
+      }
+      
+      checkbox.addEventListener('change', () => {
+        console.log('Country checkbox changed:', countryName, checkbox.checked);
+        
+        if (checkbox.checked) {
+          if (!this.formData.countriesOfOperation.includes(countryName)) {
+            this.formData.countriesOfOperation.push(countryName);
+            console.log('Added country:', countryName);
           }
         } else {
-          // Remove country
-          const index = this.formData.countriesOfOperation.indexOf(country);
-          if (index > -1) {
+          const index = this.formData.countriesOfOperation.indexOf(countryName);
+          if (index !== -1) {
             this.formData.countriesOfOperation.splice(index, 1);
+            console.log('Removed country:', countryName);
           }
         }
         
-        // Update the selected countries display
         this.updateSelectedCountriesDisplay();
       });
     }
-
-    // Set up remove country buttons
+    
     this.setupRemoveCountryButtons();
+    this.updateSelectedCountriesDisplay();
   }
 
   private setupRemoveCountryButtons(): void {
-    const removeButtons = this.domElement.querySelectorAll(`.${styles.removeCountry}`);
+    console.log('Setting up remove country buttons');
+    const removeButtons = this.domElement.querySelectorAll('.remove-country-btn');
+    
     for (let i = 0; i < removeButtons.length; i++) {
-      const removeBtn = removeButtons[i] as HTMLElement;
-      removeBtn.addEventListener('click', (e) => {
-        const country = (e.target as HTMLElement).getAttribute('data-country');
+      const button = removeButtons[i] as HTMLButtonElement;
+      button.addEventListener('click', () => {
+        const countryName = button.getAttribute('data-country');
+        console.log('Remove country button clicked:', countryName);
         
-        // Remove country from the array
-        const index = this.formData.countriesOfOperation.indexOf(country);
-        if (index > -1) {
-          this.formData.countriesOfOperation.splice(index, 1);
+        if (countryName) {
+          const index = this.formData.countriesOfOperation.indexOf(countryName);
+          if (index !== -1) {
+            this.formData.countriesOfOperation.splice(index, 1);
+            
+            // Uncheck the corresponding checkbox
+            const checkbox = this.domElement.querySelector(`.country-checkbox[value="${countryName}"]`) as HTMLInputElement;
+            if (checkbox) {
+              checkbox.checked = false;
+            }
+            
+            this.updateSelectedCountriesDisplay();
+          }
         }
-        
-        // Uncheck the checkbox
-        const checkbox = this.domElement.querySelector(`#country-${country.replace(/\s+/g, '-').toLowerCase()}`) as HTMLInputElement;
-        if (checkbox) {
-          checkbox.checked = false;
-        }
-        
-        // Update the display
-        this.updateSelectedCountriesDisplay();
       });
     }
   }
 
   private updateSelectedCountriesDisplay(): void {
-    const container = this.domElement.querySelector(`.${styles.selectedCountries}`);
-    if (!container) return;
+    console.log('Updating selected countries display - DEBUG');
+    console.log('Countries to display:', this.formData.countriesOfOperation);
     
-    if (this.formData.countriesOfOperation.length > 0) {
-      let htmlContent = '';
-      for (let i = 0; i < this.formData.countriesOfOperation.length; i++) {
-        const country = this.formData.countriesOfOperation[i];
-        htmlContent += `
-          <div class="${styles.countryTag}" data-country="${country}">
-            ${country} <span class="${styles.removeCountry}" data-country="${country}">×</span>
-          </div>
-        `;
-      }
-      container.innerHTML = htmlContent;
-      
-      // Re-attach event listeners to new elements
-      this.setupRemoveCountryButtons();
-    } else {
-      container.innerHTML = '<div>No countries selected</div>';
+    // Try both selectors to see which one works
+    const selectedCountriesContainer = this.domElement.querySelector(`.${styles.selectedCountries}`);
+    console.log('Selected countries container found with styles.selectedCountries:', !!selectedCountriesContainer);
+    
+    if (!selectedCountriesContainer) {
+      console.warn('Could not find selected countries container with .selectedCountries class');
+      console.log('Available selectors in this area:', 
+        Array.from(this.domElement.querySelectorAll('.country-selector *'))
+          .map(el => (el as HTMLElement).className)
+          .join(', ')
+      );
     }
     
-    // Update validation styling
-    if (this.validateAttempted) {
-      if (this.formData.countriesOfOperation.length === 0) {
-        container.classList.add(styles.error);
-        if (!container.nextElementSibling || !container.nextElementSibling.classList.contains(styles.errorText)) {
-          container.insertAdjacentHTML('afterend', `<div class="${styles.errorText}">Please select at least one country</div>`);
+    if (selectedCountriesContainer) {
+      selectedCountriesContainer.innerHTML = '';
+      
+      if (this.formData.countriesOfOperation.length > 0) {
+        console.log('Countries selected:', this.formData.countriesOfOperation.length);
+        
+        for (const country of this.formData.countriesOfOperation) {
+          const countryElement = document.createElement('div');
+          countryElement.className = 'selected-country';
+          countryElement.textContent = country;
+          
+          const removeButton = document.createElement('button');
+          removeButton.type = 'button';
+          removeButton.className = 'remove-country-btn';
+          removeButton.setAttribute('data-country', country);
+          removeButton.innerHTML = '&times;';
+          
+          countryElement.appendChild(removeButton);
+          selectedCountriesContainer.appendChild(countryElement);
+        }
+        
+        // Add validation styling
+        const countriesFeedback = this.domElement.querySelector('#countriesFeedback');
+        if (countriesFeedback) {
+          countriesFeedback.classList.remove('show-error');
         }
       } else {
-        container.classList.remove(styles.error);
-        const errorText = container.nextElementSibling;
-        if (errorText && errorText.classList.contains(styles.errorText)) {
-          errorText.remove();
+        console.log('No countries selected');
+        // Show validation error if validation has been attempted
+        if (this.validateAttempted) {
+          const countriesFeedback = this.domElement.querySelector('#countriesFeedback');
+          if (countriesFeedback) {
+            countriesFeedback.classList.add('show-error');
+          }
         }
       }
+      
+      // Refresh remove buttons
+      this.setupRemoveCountryButtons();
+    } else {
+      console.log('Selected countries container not found');
     }
   }
 
   private validateStep1(): boolean {
+    console.log('Validating Step 1');
+    this.validateAttempted = true;
     let isValid = true;
     
-    // Validate fullName
-    if (!this.formData.fullName.trim()) {
+    const fullNameInput = this.domElement.querySelector('#fullName') as HTMLInputElement;
+    const organisationNameInput = this.domElement.querySelector('#organisationName') as HTMLInputElement;
+    const emailAddressInput = this.domElement.querySelector('#emailAddress') as HTMLInputElement;
+    const operationLocationInput = this.domElement.querySelector('#operationLocation') as HTMLInputElement;
+    const operationLengthInput = this.domElement.querySelector('#operationLength') as HTMLInputElement;
+    
+    // Check each field for validity
+    if (!fullNameInput || !fullNameInput.value.trim()) {
+      console.log('Full name is invalid');
       isValid = false;
     }
     
-    // Validate organisationName
-    if (!this.formData.organisationName.trim()) {
+    if (!organisationNameInput || !organisationNameInput.value.trim()) {
+      console.log('Organisation name is invalid');
       isValid = false;
     }
     
-    // Validate emailAddress
-    if (!this.formData.emailAddress.trim() || !this.isValidEmail(this.formData.emailAddress)) {
+    if (!emailAddressInput || !emailAddressInput.value.trim()) {
+      console.log('Email address is empty');
+      isValid = false;
+    } else {
+      // Validate email format
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(emailAddressInput.value)) {
+        console.log('Email address format is invalid');
+        isValid = false;
+      }
+    }
+    
+    if (!operationLocationInput || !operationLocationInput.value.trim()) {
+      console.log('Operation location is invalid');
       isValid = false;
     }
     
-    // Validate operationLocation
-    if (!this.formData.operationLocation) {
-      isValid = false;
-    }
-    
-    // Validate countriesOfOperation
     if (this.formData.countriesOfOperation.length === 0) {
+      console.log('Countries of operation is empty');
       isValid = false;
     }
     
-    // Validate operationLength
-    if (!this.formData.operationLength) {
+    if (!operationLengthInput || !operationLengthInput.value.trim()) {
+      console.log('Operation length is invalid');
       isValid = false;
     }
     
-    // Re-render form to show error messages
+    // Re-render to show validation messages
     if (!isValid) {
       this.render();
     }
     
+    console.log('Step 1 validation result:', isValid);
     return isValid;
   }
 
   private validateStep2(): boolean {
+    console.log('Validating Step 2');
+    this.validateAttempted = true;
     let isValid = true;
     
     // Primary business area validation
-    if (!this.formData.primaryBusinessAreas) {
+    const primaryBusinessArea = this.domElement.querySelector('#primaryBusinessAreas') as HTMLSelectElement;
+    console.log('Primary business area:', primaryBusinessArea ? primaryBusinessArea.value : undefined);
+    if (!primaryBusinessArea || !primaryBusinessArea.value) {
+      console.log('Primary business area is invalid');
       isValid = false;
+    } else {
+      this.formData.primaryBusinessAreas = primaryBusinessArea.value;
     }
     
     // Product/service category validation
-    if (!this.formData.productServiceCategory) {
+    const productServiceCategory = this.domElement.querySelector('#productServiceCategory') as HTMLSelectElement;
+    console.log('Product/service category:', productServiceCategory ? productServiceCategory.value : undefined);
+    if (!productServiceCategory || !productServiceCategory.value) {
+      console.log('Product/service category is invalid');
       isValid = false;
+    } else {
+      this.formData.productServiceCategory = productServiceCategory.value;
     }
     
     // Other product/service category validation if "Other" is selected
-    if (this.formData.productServiceCategory === 'Other' && !this.formData.otherProductServiceCategory) {
-      isValid = false;
+    if (this.formData.productServiceCategory === 'Other') {
+      const otherProductServiceCategory = this.domElement.querySelector('#otherProductServiceCategory') as HTMLInputElement;
+      console.log('Other product/service category:', otherProductServiceCategory ? otherProductServiceCategory.value : undefined);
+      if (!otherProductServiceCategory || !otherProductServiceCategory.value.trim()) {
+        console.log('Other product/service category is invalid');
+        isValid = false;
+      } else {
+        this.formData.otherProductServiceCategory = otherProductServiceCategory.value.trim();
+      }
     }
     
     // Operational status validation
-    if (this.formData.operationalStatus === null) {
+    const operationalStatusYes = this.domElement.querySelector('#operationalStatusYes') as HTMLInputElement;
+    const operationalStatusNo = this.domElement.querySelector('#operationalStatusNo') as HTMLInputElement;
+    console.log('Operational status:', 
+      operationalStatusYes ? operationalStatusYes.checked : undefined, 
+      operationalStatusNo ? operationalStatusNo.checked : undefined);
+    if ((!operationalStatusYes || !operationalStatusYes.checked) && (!operationalStatusNo || !operationalStatusNo.checked)) {
+      console.log('Operational status is invalid');
       isValid = false;
+    } else {
+      this.formData.operationalStatus = operationalStatusYes.checked;
     }
     
     // Regulatory status validation
-    if (this.formData.regulatoryStatus === null) {
+    const regulatoryStatusYes = this.domElement.querySelector('#regulatoryStatusYes') as HTMLInputElement;
+    const regulatoryStatusNo = this.domElement.querySelector('#regulatoryStatusNo') as HTMLInputElement;
+    console.log('Regulatory status:', 
+      regulatoryStatusYes ? regulatoryStatusYes.checked : undefined, 
+      regulatoryStatusNo ? regulatoryStatusNo.checked : undefined);
+    if ((!regulatoryStatusYes || !regulatoryStatusYes.checked) && (!regulatoryStatusNo || !regulatoryStatusNo.checked)) {
+      console.log('Regulatory status is invalid');
       isValid = false;
+    } else {
+      this.formData.regulatoryStatus = regulatoryStatusYes.checked;
     }
     
     // Regulators validation if regulatory status is "Yes"
-    if (this.formData.regulatoryStatus === true && this.formData.regulators.length === 0) {
-      isValid = false;
+    if (this.formData.regulatoryStatus === true) {
+      console.log('Regulators:', this.formData.regulators);
+      if (this.formData.regulators.length === 0) {
+        const regulatorCheckboxes = this.domElement.querySelectorAll('.regulator-checkbox:checked') as NodeListOf<HTMLInputElement>;
+        console.log('Regulator checkboxes found:', regulatorCheckboxes.length);
+        
+        // Check if there are checked checkboxes but the array is empty (sync issue)
+        if (regulatorCheckboxes.length > 0) {
+          // Sync the form data
+          this.formData.regulators = Array.from(regulatorCheckboxes).map(checkbox => checkbox.value);
+          console.log('Synced regulators:', this.formData.regulators);
+        } else {
+          console.log('No regulators selected');
+          isValid = false;
+        }
+      }
     }
     
     // Other regulator validation if "Other" is selected
-    if (this.formData.regulators.indexOf('Other') !== -1 && !this.formData.otherRegulator) {
-      isValid = false;
+    if (this.formData.regulators.indexOf('Other') !== -1) {
+      const otherRegulatorInput = this.domElement.querySelector('#otherRegulator') as HTMLInputElement;
+      console.log('Other regulator:', otherRegulatorInput ? otherRegulatorInput.value : undefined);
+      if (!otherRegulatorInput || !otherRegulatorInput.value.trim()) {
+        console.log('Other regulator is invalid');
+        isValid = false;
+      } else {
+        this.formData.otherRegulator = otherRegulatorInput.value.trim();
+      }
     }
+    
+    console.log('Step 2 validation result:', isValid);
     
     // Set validation attempted flag and re-render if not valid
     if (!isValid) {
-      this.validateAttempted = true;
       this.render();
     }
     
@@ -973,42 +1152,63 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
   }
 
   private saveStep1Data(): void {
-    this.formData.fullName = (this.domElement.querySelector('#fullName') as HTMLInputElement).value;
-    this.formData.organisationName = (this.domElement.querySelector('#organisationName') as HTMLInputElement).value;
-    this.formData.contactNumber = (this.domElement.querySelector('#contactNumber') as HTMLInputElement).value;
-    this.formData.emailAddress = (this.domElement.querySelector('#emailAddress') as HTMLInputElement).value;
-    this.formData.websiteAddress = (this.domElement.querySelector('#websiteAddress') as HTMLInputElement).value;
-    this.formData.operationLocation = (this.domElement.querySelector('#operationLocation') as HTMLSelectElement).value;
-    this.formData.operationLength = (this.domElement.querySelector('#operationLength') as HTMLSelectElement).value;
+    console.log('Saving Step 1 data');
+    const fullNameInput = this.domElement.querySelector('#fullName') as HTMLInputElement;
+    const organisationNameInput = this.domElement.querySelector('#organisationName') as HTMLInputElement;
+    const contactNumberInput = this.domElement.querySelector('#contactNumber') as HTMLInputElement;
+    const emailAddressInput = this.domElement.querySelector('#emailAddress') as HTMLInputElement;
+    const websiteAddressInput = this.domElement.querySelector('#websiteAddress') as HTMLInputElement;
+    const operationLocationInput = this.domElement.querySelector('#operationLocation') as HTMLInputElement;
+    const operationLengthInput = this.domElement.querySelector('#operationLength') as HTMLInputElement;
     
-    // Country selection is handled by event listeners that update this.formData.countriesOfOperation
+    if (fullNameInput) this.formData.fullName = fullNameInput.value.trim();
+    if (organisationNameInput) this.formData.organisationName = organisationNameInput.value.trim();
+    if (contactNumberInput) this.formData.contactNumber = contactNumberInput.value.trim();
+    if (emailAddressInput) this.formData.emailAddress = emailAddressInput.value.trim();
+    if (websiteAddressInput) this.formData.websiteAddress = websiteAddressInput.value.trim();
+    if (operationLocationInput) this.formData.operationLocation = operationLocationInput.value.trim();
+    if (operationLengthInput) this.formData.operationLength = operationLengthInput.value.trim();
+    
+    // Note: Countries of operation are managed by event listeners which update the countriesOfOperation array
+    console.log('Saved form data:', this.formData);
+    
+    // Move to the next step
+    this.currentStep = 2;
+    this.validateAttempted = false;
+    this.render();
   }
 
   private saveStep2Data(): void {
+    console.log('Saving Step 2 data');
+    
     // Get primary business area
-    const primaryBusinessAreasSelect = document.getElementById('primaryBusinessAreas') as HTMLSelectElement;
+    const primaryBusinessAreasSelect = this.domElement.querySelector('#primaryBusinessAreas') as HTMLSelectElement;
     if (primaryBusinessAreasSelect) {
+      console.log('Saving primary business area:', primaryBusinessAreasSelect.value);
       this.formData.primaryBusinessAreas = primaryBusinessAreasSelect.value;
     }
     
     // Get product/service category
-    const productServiceCategorySelect = document.getElementById('productServiceCategory') as HTMLSelectElement;
+    const productServiceCategorySelect = this.domElement.querySelector('#productServiceCategory') as HTMLSelectElement;
     if (productServiceCategorySelect) {
+      console.log('Saving product/service category:', productServiceCategorySelect.value);
       this.formData.productServiceCategory = productServiceCategorySelect.value;
     }
     
     // Get other product/service category if applicable
     if (this.formData.productServiceCategory === 'Other') {
-      const otherProductServiceCategoryInput = document.getElementById('otherProductServiceCategory') as HTMLInputElement;
+      const otherProductServiceCategoryInput = this.domElement.querySelector('#otherProductServiceCategory') as HTMLInputElement;
       if (otherProductServiceCategoryInput) {
+        console.log('Saving other product/service category:', otherProductServiceCategoryInput.value);
         this.formData.otherProductServiceCategory = otherProductServiceCategoryInput.value;
       }
     }
     
     // Get operational status
-    const operationalStatusYes = document.getElementById('operationalStatusYes') as HTMLInputElement;
-    const operationalStatusNo = document.getElementById('operationalStatusNo') as HTMLInputElement;
+    const operationalStatusYes = this.domElement.querySelector('#operationalStatusYes') as HTMLInputElement;
+    const operationalStatusNo = this.domElement.querySelector('#operationalStatusNo') as HTMLInputElement;
     if (operationalStatusYes && operationalStatusNo) {
+      console.log('Saving operational status:', operationalStatusYes.checked ? 'Yes' : 'No');
       if (operationalStatusYes.checked) {
         this.formData.operationalStatus = true;
       } else if (operationalStatusNo.checked) {
@@ -1017,36 +1217,46 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
     }
     
     // Get regulatory status
-    const regulatoryStatusYes = document.getElementById('regulatoryStatusYes') as HTMLInputElement;
-    const regulatoryStatusNo = document.getElementById('regulatoryStatusNo') as HTMLInputElement;
+    const regulatoryStatusYes = this.domElement.querySelector('#regulatoryStatusYes') as HTMLInputElement;
+    const regulatoryStatusNo = this.domElement.querySelector('#regulatoryStatusNo') as HTMLInputElement;
     if (regulatoryStatusYes && regulatoryStatusNo) {
+      console.log('Saving regulatory status:', regulatoryStatusYes.checked ? 'Yes' : 'No');
       if (regulatoryStatusYes.checked) {
         this.formData.regulatoryStatus = true;
+        
+        // Check for regulator checkboxes
+        const regulatorCheckboxes = this.domElement.querySelectorAll('.regulator-checkbox:checked') as NodeListOf<HTMLInputElement>;
+        if (regulatorCheckboxes && regulatorCheckboxes.length > 0) {
+          // Update the regulators array directly from checked checkboxes
+          this.formData.regulators = Array.from(regulatorCheckboxes).map(checkbox => checkbox.value);
+          console.log('Saving regulators:', this.formData.regulators);
+        }
       } else if (regulatoryStatusNo.checked) {
         this.formData.regulatoryStatus = false;
       }
     }
     
-    // Regulator checkboxes are handled by event listeners that update the regulators array
-    
     // Get other regulator if applicable
     if (this.formData.regulators.indexOf('Other') !== -1) {
-      const otherRegulatorInput = document.getElementById('otherRegulator') as HTMLInputElement;
+      const otherRegulatorInput = this.domElement.querySelector('#otherRegulator') as HTMLInputElement;
       if (otherRegulatorInput) {
+        console.log('Saving other regulator:', otherRegulatorInput.value);
         this.formData.otherRegulator = otherRegulatorInput.value;
       }
     }
+    
+    console.log('Step 2 data saved:', this.formData);
   }
 
   private saveStep3Data(): void {
     // Get product/service description
-    const descriptionTextarea = document.getElementById('productServiceDescription') as HTMLTextAreaElement;
+    const descriptionTextarea = this.domElement.querySelector('#productServiceDescription') as HTMLTextAreaElement;
     if (descriptionTextarea) {
       this.formData.productServiceDescription = descriptionTextarea.value;
     }
     
     // Get questions
-    const questionInputs = document.querySelectorAll('.question-input') as NodeListOf<HTMLTextAreaElement>;
+    const questionInputs = this.domElement.querySelectorAll('.question-input') as NodeListOf<HTMLTextAreaElement>;
     this.formData.questions = [];
     
     for (let i = 0; i < questionInputs.length; i++) {
@@ -1057,14 +1267,14 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
     }
     
     // Get additional information
-    const additionalInfoTextarea = document.getElementById('additionalInformation') as HTMLTextAreaElement;
+    const additionalInfoTextarea = this.domElement.querySelector('#additionalInformation') as HTMLTextAreaElement;
     if (additionalInfoTextarea) {
       this.formData.additionalInformation = additionalInfoTextarea.value;
     }
     
     // Get FAQ confirmation
-    const faqYes = document.getElementById('faqConfirmationYes') as HTMLInputElement;
-    const faqNo = document.getElementById('faqConfirmationNo') as HTMLInputElement;
+    const faqYes = this.domElement.querySelector('#faqConfirmationYes') as HTMLInputElement;
+    const faqNo = this.domElement.querySelector('#faqConfirmationNo') as HTMLInputElement;
     if (faqYes && faqNo) {
       if (faqYes.checked) {
         this.formData.faqConfirmation = true;
@@ -1074,7 +1284,7 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
     }
     
     // Get consent confirmation
-    const consentCheckbox = document.getElementById('consentCheckbox') as HTMLInputElement;
+    const consentCheckbox = this.domElement.querySelector('#consentCheckbox') as HTMLInputElement;
     if (consentCheckbox) {
       this.formData.consentConfirmation = consentCheckbox.checked;
     }
@@ -1127,7 +1337,7 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
   }
 
   private setupRegulatorSelector(): void {
-    const regulatorCheckboxes = document.querySelectorAll('.regulator-checkbox') as NodeListOf<HTMLInputElement>;
+    const regulatorCheckboxes = this.domElement.querySelectorAll('.regulator-checkbox') as NodeListOf<HTMLInputElement>;
     
     for (let i = 0; i < regulatorCheckboxes.length; i++) {
       const checkbox = regulatorCheckboxes[i];
@@ -1157,7 +1367,7 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
   }
 
   private setupRemoveQuestionButtons(): void {
-    const removeButtons = document.querySelectorAll('.remove-question-btn');
+    const removeButtons = this.domElement.querySelectorAll('.remove-question-btn');
     
     for (let i = 0; i < removeButtons.length; i++) {
       const button = removeButtons[i] as HTMLButtonElement;
@@ -1174,7 +1384,7 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
   }
   
   private setupRemoveFileButtons(): void {
-    const removeButtons = document.querySelectorAll('.remove-file-btn');
+    const removeButtons = this.domElement.querySelectorAll('.remove-file-btn');
     
     for (let i = 0; i < removeButtons.length; i++) {
       const button = removeButtons[i] as HTMLButtonElement;
@@ -1190,7 +1400,7 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
     }
   }
 
-  protected get dataVersion(): Version {
+  protected getDataVersion(): Version {
     return Version.parse('1.0');
   }
 
