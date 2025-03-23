@@ -729,6 +729,11 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
       if (addQuestionBtn) {
         addQuestionBtn.addEventListener('click', () => {
           console.log('Add question button clicked');
+          
+          // Save current section data before re-rendering
+          this.saveCurrentInquiryData();
+          
+          // Add new question
           this.formData.questions.push('');
           this.render();
           this.setupRemoveQuestionButtons();
@@ -1375,6 +1380,10 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
       button.addEventListener('click', () => {
         const index = parseInt(button.getAttribute('data-index'), 10);
         if (!isNaN(index) && index > 0 && index < this.formData.questions.length) {
+          // Save current form data before modifying and re-rendering
+          this.saveCurrentInquiryData();
+          
+          // Remove the question at the specified index
           this.formData.questions.splice(index, 1);
           this.render();
           this.setupRemoveQuestionButtons();
@@ -1398,6 +1407,51 @@ export default class EnquiryWebPart extends BaseClientSideWebPart<IEnquiryWebPar
         }
       });
     }
+  }
+
+  private saveCurrentInquiryData(): void {
+    console.log('Saving current inquiry data without changing steps');
+    
+    // Get product/service description
+    const descriptionTextarea = this.domElement.querySelector('#productServiceDescription') as HTMLTextAreaElement;
+    if (descriptionTextarea) {
+      this.formData.productServiceDescription = descriptionTextarea.value;
+    }
+    
+    // Get existing questions (preserve user input)
+    const questionInputs = this.domElement.querySelectorAll('.question-input') as NodeListOf<HTMLTextAreaElement>;
+    
+    // Only update existing questions, don't change the array length
+    for (let i = 0; i < questionInputs.length; i++) {
+      if (i < this.formData.questions.length) {
+        this.formData.questions[i] = questionInputs[i].value;
+      }
+    }
+    
+    // Get additional information
+    const additionalInfoTextarea = this.domElement.querySelector('#additionalInformation') as HTMLTextAreaElement;
+    if (additionalInfoTextarea) {
+      this.formData.additionalInformation = additionalInfoTextarea.value;
+    }
+    
+    // Get FAQ confirmation
+    const faqYes = this.domElement.querySelector('#faqConfirmationYes') as HTMLInputElement;
+    const faqNo = this.domElement.querySelector('#faqConfirmationNo') as HTMLInputElement;
+    if (faqYes && faqNo) {
+      if (faqYes.checked) {
+        this.formData.faqConfirmation = true;
+      } else if (faqNo.checked) {
+        this.formData.faqConfirmation = false;
+      }
+    }
+    
+    // Get consent confirmation
+    const consentCheckbox = this.domElement.querySelector('#consentCheckbox') as HTMLInputElement;
+    if (consentCheckbox) {
+      this.formData.consentConfirmation = consentCheckbox.checked;
+    }
+    
+    console.log('Current inquiry data saved:', this.formData);
   }
 
   protected getDataVersion(): Version {
